@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/ffmpeg_page.dart';
 import 'screens/video_page.dart';
-
 void main() {
   runApp(const MyApp());
 }
@@ -11,10 +10,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: VideoPage.name,
+      initialRoute: FfmpegPage.name,
       routes: {
         FfmpegPage.name: (context) => const FfmpegPage(),
-        VideoPage.name: (context) => const VideoPage(),
+        // VideoPage.name: (context) =>  VideoPage(),
       },
     );
   }

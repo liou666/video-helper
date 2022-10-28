@@ -5,7 +5,8 @@ import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'video_page.dart';
-
+import 'package:ffmpeg_kit_flutter_full_gpl/media_information.dart';
+import 'package:video_helper/components/ffmpeg_helper.dart';
 class FfmpegPage extends StatefulWidget {
   static const name = 'FfmpegPage';
   const FfmpegPage({Key? key}) : super(key: key);
@@ -14,7 +15,23 @@ class FfmpegPage extends StatefulWidget {
 }
 
 class _FfmpegPageState extends State<FfmpegPage> {
-
+  late FfmpegHelper ffmpeg;
+  late Directory tempDirectory;
+  String outputName='a.mp4';
+  @override
+  void initState() {
+    super.initState();
+    const input='http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4';
+    getTemporaryDirectory().then((temp){
+      tempDirectory=temp;
+      debugPrint('tempDirectory: ${File(tempDirectory.path).existsSync()}');
+      ffmpeg= FfmpegHelper(input: input)
+        ..setOutputPath(tempDirectory.path)
+        ..setVideoFilename(outputName)
+        ..setVideoSliceTime(startPoint:const Duration(seconds: 20), endPoint:const  Duration(seconds: 30))
+        ..setDisableAudio();
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,20 +41,13 @@ class _FfmpegPageState extends State<FfmpegPage> {
         children: [
           ElevatedButton(
               onPressed: () async {
-                final tempPath = await getTemporaryDirectory();
-                debugPrint('tempath: ${File(tempPath.path).existsSync()}');
-                final output = '${tempPath.path}/a.mp4';
-                debugPrint('output: $output');
-
-                const startPoint =  Duration(milliseconds: 10000);
-                const endPoint =  Duration(milliseconds: 16000);
-
-                final comment =
-                    '-ss $startPoint -i http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4 -t ${endPoint - startPoint} -c:a copy $output -y  -hide_banner';
-                await FFmpegKit.executeAsync(comment, (session) async {
-                  final returnCode = await session.getReturnCode();
-
+                ffmpeg.execAsync(completeCallback:(session)async{
+                  final command= session.getCommand();
+                  debugPrint(command);
+                  final returnCode =await session.getReturnCode();
                   if (ReturnCode.isSuccess(returnCode)) {
+                    final output = '${tempDirectory.path}/$outputName';
+                    debugPrint(output);
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (ctx) {
@@ -45,19 +55,22 @@ class _FfmpegPageState extends State<FfmpegPage> {
                       }),
                     );
                     debugPrint('success');
-                    final log = await session.getAllLogsAsString();
                   } else if (ReturnCode.isCancel(returnCode)) {
                     debugPrint('cancel');
                   } else {
                     debugPrint('error');
-                    final log = await session.getAllLogsAsString();
+                    final log = await session.getAllLogs();
+                    log.forEach((element) {
+                      print(element.getMessage());
+                    });
                   }
-                }, (logs) {
-                  // debugPrint(logs)
                 });
-
               },
               child: const Text('run')),
+          ElevatedButton(onPressed: ()async{
+            final info= await ffmpeg.getMediaInfo();
+            debugPrint(info?.getBitrate());
+          }, child:const Text('getInfo'),)
         ],
       ),
     ));
@@ -80,17 +93,4 @@ double getFFmpegProgress(String ffmpegLogs, num videoDurationInSec) {
     }
   }
   return 0;
-}
-//获取视频信息·
-getMediaInfo(String input)async {
-  final session= await FFprobeKit.getMediaInformation(input);
-  final info=  session.getMediaInformation();
-  print('getDuration: ${session.getDuration()}');
-  print('info.getDuration: ${info?.getDuration()}');
-  print('info.getFormat: ${info?.getFormat()}');
-  print('info.getStartTime: ${info?.getStartTime()}');
-  print('info.getFilename: ${info?.getFilename()}');
-  print('info.getSize: ${info?.getSize()}');
-  print('info.getBitrate: ${info?.getBitrate()}');
-  return info;
 }

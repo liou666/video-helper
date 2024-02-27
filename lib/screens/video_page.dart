@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'ffmpeg_page.dart';
 import 'dart:io';
 import 'package:video_player/video_player.dart';
+
 class VideoPage extends StatefulWidget {
   static const name = 'VideoPage';
   const VideoPage({Key? key, required this.filePath}) : super(key: key);
@@ -16,8 +17,7 @@ class _VideoPageState extends State<VideoPage> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.file(
-        widget.filePath)
+    _controller = VideoPlayerController.file(widget.filePath)
       ..initialize().then((_) {
         setState(() {});
       });
@@ -31,9 +31,9 @@ class _VideoPageState extends State<VideoPage> {
         body: Center(
           child: _controller.value.isInitialized
               ? AspectRatio(
-            aspectRatio: _controller.value.aspectRatio,
-            child: VideoPlayer(_controller),
-          )
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: VideoPlayer(_controller),
+                )
               : Container(),
         ),
         floatingActionButton: FloatingActionButton(
@@ -58,4 +58,3 @@ class _VideoPageState extends State<VideoPage> {
     _controller.dispose();
   }
 }
-
